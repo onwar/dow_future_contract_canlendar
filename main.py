@@ -1,4 +1,5 @@
 from ics import Calendar, Event
+from ics.grammar.parse import ContentLine
 from datetime import date, timedelta
 import holidays
 
@@ -20,11 +21,10 @@ def get_last_trading_day(contract_year, contract_month):
     """
     base_date = get_third_friday(contract_year, contract_month)
     
-    # 修正点：直接使用 holidays.NYSE 类来获取纽交所假期
+    # 使用 holidays.NYSE 获取纽交所假期
     nyse_holidays = holidays.NYSE(years=contract_year)
     
-    # 如果第三个星期五是假期，向前寻找最近的工作日
-    # 同时排除周末 (weekday > 4) 和 假期
+    # 排除周末和假期
     while base_date in nyse_holidays or base_date.weekday() > 4: 
         base_date -= timedelta(days=1)
         
@@ -42,8 +42,13 @@ def generate_contract_code(year, month):
 def main():
     c = Calendar()
     
+    # --- 设置日历名称 ---
+    # 这会让日历在 macOS/iOS 订阅时显示为 "道指期货日历"
+    c.extra.append(ContentLine(name='X-WR-CALNAME', value='道指期货日历'))
+    # 可选：设置刷新间隔（例如建议客户端每24小时刷新一次）
+    # c.extra.append(ContentLine(name='X-PUBLISHED-TTL', value='PT24H'))
+    
     current_year = date.today().year
-    # 生成今年和明年的日历
     target_years = [current_year, current_year + 1]
     contract_months = [3, 6, 9, 12] 
     
